@@ -1,0 +1,32 @@
+{
+  "name": "@clawdbot/wechat",
+  "version": "2026.1.26",
+  "type": "module",
+  "description": "Clawdbot WeChat channel plugin (via wechat-robot-admin-backend)",
+  "moltbot": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "channel": {
+      "id": "wechat",
+      "label": "WeChat",
+      "selectionLabel": "WeChat (Robot Admin)",
+      "docsPath": "/channels/wechat",
+      "docsLabel": "wechat",
+      "blurb": "WeChat messaging via wechat-robot-admin-backend API.",
+      "aliases": [
+        "wx"
+      ],
+      "order": 85,
+      "quickstartAllowFrom": true
+    },
+    "install": {
+      "npmSpec": "@clawdbot/wechat",
+      "localPath": "extensions/wechat",
+      "defaultChoice": "npm"
+    }
+  },
+  "devDependencies": {
+    "moltbot": "workspace:*"
+  }
+}
