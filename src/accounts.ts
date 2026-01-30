@@ -4,8 +4,8 @@
  *
  * 支持多账户配置，解析账户 ID、Token、API 地址等信息
  */
-import type { MoltbotConfig } from "clawdbot/plugin-sdk";
-import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "clawdbot/plugin-sdk";
+import type { MoltbotConfig } from "openclaw/plugin-sdk";
+import { DEFAULT_ACCOUNT_ID, normalizeAccountId } from "openclaw/plugin-sdk";
 
 import type { ResolvedWeChatAccount, WeChatAccountConfig, WeChatConfig } from "./types.js";
 import { resolveWeChatToken } from "./token.js";

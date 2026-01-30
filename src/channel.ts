@@ -4,7 +4,7 @@ import type {
   ChannelGatewayContext,
   ChannelPlugin,
   MoltbotConfig,
-} from "clawdbot/plugin-sdk";
+} from "openclaw/plugin-sdk";
 import {
   applyAccountNameToChannelSection,
   buildChannelConfigSchema,
@@ -15,7 +15,7 @@ import {
   normalizeAccountId,
   PAIRING_APPROVED_MESSAGE,
   setAccountEnabledInConfigSection,
-} from "clawdbot/plugin-sdk";
+} from "openclaw/plugin-sdk";
 
 import {
   listWeChatAccountIds,
@@ -45,11 +45,18 @@ const meta = {
   quickstartAllowFrom: true,
 };
 
+/**
+ * Normalize WeChat messaging target.
+ * 标准化微信消息目标
+ *
+ * 支持格式：wechat:wxid_xxx, wx:wxid_xxx, group:xxx@chatroom
+ */
 function normalizeWeChatMessagingTarget(raw: string): string | undefined {
   const trimmed = raw?.trim();
   if (!trimmed) return undefined;
-  // Strip wechat: or wx: prefix
-  return trimmed.replace(/^(wechat|wx):/i, "");
+  // Strip wechat:, wx:, or group: prefix
+  // 移除 wechat:, wx:, 或 group: 前缀
+  return trimmed.replace(/^(wechat|wx|group):/i, "");
 }
 
 export const wechatDock: ChannelDock = {

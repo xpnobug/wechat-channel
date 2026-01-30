@@ -4,7 +4,7 @@
  *
  * 支持发送文本消息和图片消息
  */
-import type { MoltbotConfig } from "clawdbot/plugin-sdk";
+import type { MoltbotConfig } from "openclaw/plugin-sdk";
 
 import { sendTextMessage, sendImageMessage } from "./api.js";
 import { resolveWeChatAccount } from "./accounts.js";

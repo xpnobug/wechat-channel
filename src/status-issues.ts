@@ -4,7 +4,7 @@
  *
  * 检测并报告配置问题，如 dmPolicy 设为 "open" 等安全风险
  */
-import type { ChannelAccountSnapshot, ChannelStatusIssue } from "clawdbot/plugin-sdk";
+import type { ChannelAccountSnapshot, ChannelStatusIssue } from "openclaw/plugin-sdk";
 
 /** 微信账户状态类型 */
 type WeChatAccountStatus = {

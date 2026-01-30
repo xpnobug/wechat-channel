@@ -1,9 +1,9 @@
 {
-  "name": "@clawdbot/wechat",
+  "name": "@openclaw/wechat",
   "version": "2026.1.26",
   "type": "module",
-  "description": "Clawdbot WeChat channel plugin (via wechat-robot-admin-backend)",
-  "moltbot": {
+  "description": "openclaw WeChat channel plugin (via wechat-robot-admin-backend)",
+  "openclaw": {
     "extensions": [
       "./index.ts"
     ],
@@ -21,12 +21,12 @@
       "quickstartAllowFrom": true
     },
     "install": {
-      "npmSpec": "@clawdbot/wechat",
+      "npmSpec": "@openclaw/wechat",
       "localPath": "extensions/wechat",
       "defaultChoice": "npm"
     }
   },
   "devDependencies": {
-    "moltbot": "workspace:*"
+    "openclaw": "workspace:*"
   }
 }

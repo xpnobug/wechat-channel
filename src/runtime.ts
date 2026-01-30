@@ -4,7 +4,7 @@
  *
  * 用于在插件的各个模块之间共享 PluginRuntime 实例
  */
-import type { PluginRuntime } from "clawdbot/plugin-sdk";
+import type { PluginRuntime } from "openclaw/plugin-sdk";
 
 /** 运行时实例 */
 let runtime: PluginRuntime | null = null;
