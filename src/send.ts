@@ -2,11 +2,13 @@
  * WeChat message sending module.
  * 微信消息发送模块
  *
- * 支持发送文本消息和图片消息
+ * 支持发送文本消息、图片消息和语音消息
  */
+import * as fs from "node:fs";
+
 import type { MoltbotConfig } from "openclaw/plugin-sdk";
 
-import { sendTextMessage, sendImageMessage } from "./api.js";
+import { sendTextMessage, sendImageMessage, sendVoiceMessage } from "./api.js";
 import { resolveWeChatAccount } from "./accounts.js";
 
 /** 发送选项 */
@@ -17,6 +19,7 @@ export type WeChatSendOptions = {
   accountId?: string;   // 账户 ID
   cfg?: MoltbotConfig;  // 配置对象
   mediaUrl?: string;    // 图片 URL（发送图片时使用）
+  voiceFilePath?: string; // 语音文件路径（发送语音时使用）
   at?: string[];        // 群聊中 @的用户 wxid 列表
 };
 
@@ -79,6 +82,30 @@ export async function sendMessageWeChat(
 
   if (!toWxid?.trim()) {
     return { ok: false, error: "No to_wxid provided" };
+  }
+
+  // 发送语音（如果提供了 voiceFilePath）
+  if (options.voiceFilePath) {
+    try {
+      // 读取语音文件
+      const voiceData = await fs.promises.readFile(options.voiceFilePath);
+      // 从路径中提取文件名
+      const filename = options.voiceFilePath.split("/").pop() ?? "voice.mp3";
+      const response = await sendVoiceMessage(
+        { baseUrl, apiToken, robotId },
+        { to_wxid: toWxid.trim(), voiceData, filename },
+      );
+      // 如果同时有文本，单独发送
+      if (text?.trim()) {
+        await sendTextMessage(
+          { baseUrl, apiToken, robotId },
+          { to_wxid: toWxid.trim(), content: text, at: options.at },
+        );
+      }
+      return { ok: true, messageId: response.data?.message_id };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
   }
 
   // 发送图片（如果提供了 mediaUrl）

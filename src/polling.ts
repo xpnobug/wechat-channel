@@ -72,7 +72,20 @@ export class WeChatMessagePoller {
     if (this.isRunning) return;
     this.isRunning = true;
 
-    console.log(`[WeChat] Poller started`);
+    console.log(`[微信] 轮询已启动`);
+
+    // 监听 abortSignal，立即停止轮询器
+    // Listen for abortSignal to immediately stop the poller
+    if (this.options.abortSignal) {
+      if (this.options.abortSignal.aborted) {
+        this.stop();
+        return;
+      }
+      this.options.abortSignal.addEventListener("abort", () => {
+        console.log(`[微信] 收到中止信号，停止轮询`);
+        this.stop();
+      }, { once: true });
+    }
 
     // 获取机器人信息（wxid 和昵称）
     // Fetch robot info to get the robot's wxid and nickname
@@ -85,7 +98,7 @@ export class WeChatMessagePoller {
       this.robotWxid = robotInfo.data?.wechat_id ?? null;
       this.robotNickname = robotInfo.data?.nickname ?? null;
       if (this.robotNickname) {
-        console.log(`[WeChat] Robot nickname: ${this.robotNickname}`);
+        console.log(`[微信] 机器人昵称: ${this.robotNickname}`);
       }
     } catch {
       // 忽略获取机器人信息时的错误
@@ -258,11 +271,10 @@ export class WeChatMessagePoller {
 
           const inboundMessage = this.convertToInboundMessage(item, contactId);
 
-          const time = new Date(item.created_at * 1000).toLocaleTimeString();
           const sender = item.sender_nickname ?? item.sender_wxid;
           const content = inboundMessage.body.length > 50 ? inboundMessage.body.substring(0, 50) + "..." : inboundMessage.body;
           const atMe = inboundMessage.isAtMe ? " [@]" : "";
-          console.log(`[WeChat] ${time} ${sender}${atMe}: ${content}`);
+          console.log(`[微信] 收到消息 ${sender}${atMe}: ${content}`);
 
           await this.options.onMessage(inboundMessage);
         }
@@ -274,7 +286,7 @@ export class WeChatMessagePoller {
           this.lastPollTimestamps.set(contactId, maxTimestamp);
         }
       } catch (error) {
-        console.error(`[WeChat] Poll error:`, error);
+        console.error(`[微信] 轮询错误:`, error);
       }
     }
 
@@ -315,6 +327,11 @@ export class WeChatMessagePoller {
     }
     if (!isAtMe && this.robotNickname && content) {
       isAtMe = content.includes(`@${this.robotNickname}`);
+    }
+
+    // 调试：输出 @检测信息
+    if (isChatRoom) {
+      console.log(`[微信] @检测: api.is_atme=${item.is_atme}, robotNickname=${this.robotNickname}, content前30字="${content.slice(0, 30)}", 最终isAtMe=${isAtMe}`);
     }
 
     return {

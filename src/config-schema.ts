@@ -24,8 +24,11 @@ const wechatAccountSchema = z.object({
   apiToken: z.string().optional(),                                         // API Token
   tokenFile: z.string().optional(),                                        // Token 文件路径
   robotId: z.number().int().positive().optional(),                         // 机器人 ID
-  dmPolicy: z.enum(["pairing", "allowlist", "open", "disabled"]).optional(), // 访问策略
+  dmPolicy: z.enum(["pairing", "allowlist", "open", "disabled"]).optional(), // 私聊访问策略
+  groupPolicy: z.enum(["pairing", "allowlist", "open", "disabled"]).optional(), // 群聊访问策略
   allowFrom: z.array(z.string()).optional(),                               // 允许的用户列表
+  commandAllowFrom: z.array(z.string()).optional(),                        // 指令/工具调用白名单
+  safetyPrefix: z.string().optional(),                                     // 访客安全前缀
   mediaMaxMb: z.number().optional(),                                       // 最大媒体文件大小（MB）
   polling: pollingConfigSchema.optional(),                                 // 轮询配置
 });

@@ -17,10 +17,16 @@ export type WeChatAccountConfig = {
   tokenFile?: string;
   /** 机器人实例 ID */
   robotId?: number;
-  /** 消息访问策略，默认 pairing */
+  /** 私聊消息访问策略，默认 pairing */
   dmPolicy?: "pairing" | "allowlist" | "open" | "disabled";
+  /** 群聊消息访问策略，默认 open */
+  groupPolicy?: "pairing" | "allowlist" | "open" | "disabled";
   /** 允许的用户微信 ID 列表（wxid_xxx 格式） */
   allowFrom?: string[];
+  /** 指令/工具调用白名单（仅这些用户可以触发 agent 执行系统操作） */
+  commandAllowFrom?: string[];
+  /** 访客安全前缀（注入到非信任用户消息前的提示文本） */
+  safetyPrefix?: string;
   /** 最大媒体文件大小（MB） */
   mediaMaxMb?: number;
   /** 群聊中是否需要 @机器人才回复，默认 true */

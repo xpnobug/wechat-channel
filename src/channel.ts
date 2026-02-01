@@ -348,6 +348,34 @@ export const wechatPlugin: ChannelPlugin<ResolvedWeChatAccount> = {
     chunkerMode: "text",
     textChunkLimit: 2048,
     sendText: async ({ to, text, accountId, cfg }) => {
+      // 检测文本中是否包含 MEDIA: 前缀的音频文件
+      const mediaMatch = text.match(/^MEDIA:([^\s]+\.(mp3|wav|m4a|ogg|aac))\s*/i);
+      console.log(`[微信] sendText 被调用，文本开头: ${text.slice(0, 100)}`);
+      console.log(`[微信] 正则匹配结果:`, mediaMatch);
+
+      if (mediaMatch) {
+        const voiceFilePath = mediaMatch[1];
+        const remainingText = text.slice(mediaMatch[0].length).trim();
+        // 过滤掉 [[reply_to_current]] 等标记
+        const cleanText = remainingText.replace(/\[\[[^\]]+\]\]/g, "").trim();
+
+        console.log(`[微信] 检测到语音文件: ${voiceFilePath}`);
+        console.log(`[微信] 剩余文本: ${cleanText}`);
+
+        const result = await sendMessageWeChat(to, cleanText, {
+          accountId: accountId ?? undefined,
+          voiceFilePath,
+          cfg: cfg as MoltbotConfig,
+        });
+        console.log(`[微信] 语音发送结果:`, result);
+        return {
+          channel: "wechat",
+          ok: result.ok,
+          messageId: result.messageId ?? "",
+          error: result.error ? new Error(result.error) : undefined,
+        };
+      }
+
       const result = await sendMessageWeChat(to, text, {
         accountId: accountId ?? undefined,
         cfg: cfg as MoltbotConfig,
@@ -360,9 +388,15 @@ export const wechatPlugin: ChannelPlugin<ResolvedWeChatAccount> = {
       };
     },
     sendMedia: async ({ to, text, mediaUrl, accountId, cfg }) => {
+      // 检测是否为本地语音文件（MEDIA: 前缀 + 音频扩展名）
+      const isLocalMedia = mediaUrl?.startsWith("MEDIA:");
+      const localPath = isLocalMedia ? mediaUrl.slice(6) : null; // 去掉 "MEDIA:" 前缀
+      const isAudio = localPath && /\.(mp3|wav|m4a|ogg|aac)$/i.test(localPath);
+
       const result = await sendMessageWeChat(to, text ?? "", {
         accountId: accountId ?? undefined,
-        mediaUrl,
+        mediaUrl: isAudio ? undefined : mediaUrl, // 音频不使用 mediaUrl
+        voiceFilePath: isAudio ? localPath : undefined, // 音频使用 voiceFilePath
         cfg: cfg as MoltbotConfig,
       });
       return {
@@ -418,14 +452,14 @@ export const wechatPlugin: ChannelPlugin<ResolvedWeChatAccount> = {
     startAccount: async (ctx: ChannelGatewayContext<ResolvedWeChatAccount>) => {
       const { cfg, accountId, account, abortSignal, setStatus, getStatus } = ctx;
 
-      console.log(`[WeChat Gateway] startAccount called for ${accountId}`);
+      console.log(`[微信网关] startAccount 被调用，账户: ${accountId}`);
 
       // Check if polling is configured
       const pollingConfig = account.polling ?? account.config.polling;
-      console.log(`[WeChat Gateway] pollingConfig:`, pollingConfig);
+      console.log(`[微信网关] 轮询配置:`, pollingConfig);
       if (!pollingConfig?.pollContactIds?.length && !pollingConfig?.pollAllContacts) {
         // No polling configured, skip starting
-        console.log(`[WeChat Gateway] No polling configured, skipping`);
+        console.log(`[微信网关] 未配置轮询，跳过`);
         return null;
       }
 
@@ -454,6 +488,9 @@ export const wechatPlugin: ChannelPlugin<ResolvedWeChatAccount> = {
               robotId: account.robotId,
               allowFrom: account.config.allowFrom,
               dmPolicy: account.config.dmPolicy,
+              groupPolicy: account.config.groupPolicy,
+              commandAllowFrom: account.config.commandAllowFrom,
+              safetyPrefix: account.config.safetyPrefix,
               requireMention: account.config.requireMention,
             });
 
@@ -461,7 +498,7 @@ export const wechatPlugin: ChannelPlugin<ResolvedWeChatAccount> = {
             const status = getStatus();
             setStatus({
               ...status,
-              lastInboundAt: new Date().toISOString(),
+              lastInboundAt: Date.now(),
             });
           } catch (error) {
             const status = getStatus();
@@ -486,21 +523,37 @@ export const wechatPlugin: ChannelPlugin<ResolvedWeChatAccount> = {
       setStatus({
         ...getStatus(),
         running: true,
-        lastStartAt: new Date().toISOString(),
+        lastStartAt: Date.now(),
         lastError: null,
       });
 
-      // Store poller reference for stopAccount
-      return poller;
+      // 返回一个长期运行的 Promise，直到 abortSignal 被触发
+      // Return a long-lived Promise that resolves when abortSignal fires
+      return new Promise<void>((resolve) => {
+        const cleanup = () => {
+          console.log(`[微信网关] 账户 ${accountId} 停止中...`);
+          poller.stop();
+          console.log(`[微信网关] 账户 ${accountId} 已停止`);
+          resolve();
+        };
+
+        if (abortSignal.aborted) {
+          cleanup();
+          return;
+        }
+
+        abortSignal.addEventListener("abort", cleanup, { once: true });
+      });
     },
     stopAccount: async (ctx: ChannelGatewayContext<ResolvedWeChatAccount>) => {
-      const { setStatus, getStatus } = ctx;
-      // The poller is returned from startAccount and passed here
-      // But we don't have direct access, so we rely on abortSignal
+      const { setStatus, getStatus, accountId } = ctx;
+      console.log(`[微信网关] stopAccount 被调用，账户: ${accountId}`);
+      // abortSignal 会触发 startAccount 的 Promise resolve
+      // 这里只需要更新状态
       setStatus({
         ...getStatus(),
         running: false,
-        lastStopAt: new Date().toISOString(),
+        lastStopAt: Date.now(),
       });
     },
   },

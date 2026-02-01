@@ -138,6 +138,63 @@ export async function sendImageMessage(
 }
 
 /**
+ * Send voice message (multipart/form-data upload).
+ * 发送语音消息（表单上传方式）
+ *
+ * @param options API 调用选项
+ * @param params.to_wxid 接收者 wxid
+ * @param params.voiceData 语音文件二进制数据
+ * @param params.filename 文件名（可选，默认 voice.mp3）
+ */
+export async function sendVoiceMessage(
+  options: WeChatApiCallOptions,
+  params: { to_wxid: string; voiceData: Buffer | Uint8Array; filename?: string },
+): Promise<WeChatApiResponse<WeChatSendMessageResult>> {
+  const { baseUrl, apiToken, robotId, timeoutMs = DEFAULT_TIMEOUT_MS } = options;
+  const url = new URL("/api/v1/message/send/voice", baseUrl);
+  url.searchParams.set("id", String(robotId));
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const fetcher = options.fetch ?? fetch;
+
+  try {
+    // 构建 multipart/form-data
+    const formData = new FormData();
+    formData.append("id", String(robotId));
+    formData.append("to_wxid", params.to_wxid);
+
+    // 创建 Blob 并添加到表单
+    const blob = new Blob([params.voiceData], { type: "audio/mpeg" });
+    formData.append("voice", blob, params.filename ?? "voice.mp3");
+
+    const response = await fetcher(url.toString(), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        // 不设置 Content-Type，让 fetch 自动设置 multipart/form-data 边界
+      },
+      body: formData,
+      signal: controller.signal,
+    });
+
+    const data = (await response.json()) as WeChatApiResponse<WeChatSendMessageResult>;
+
+    if (data.code !== 200) {
+      throw new WeChatApiError(
+        data.message ?? "Failed to send voice message",
+        data.code,
+        JSON.stringify(data),
+      );
+    }
+
+    return data;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
  * Get contact list (friends or chat rooms).
  * 获取联系人列表（好友或群聊）
  */
