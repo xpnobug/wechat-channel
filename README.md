@@ -13,7 +13,7 @@
 
 ## 前置要求
 
-1. 部署运行 [wechat-robot-admin-backend](https://github.com/user/wechat-robot-admin-backend)
+1. 部署运行 [wechat-robot-admin-backend](https://github.com/hp0912/wechat-robot-admin-backend.git)
 2. 获取 API Token（在后端管理界面创建）
 3. 记录 Robot ID（机器人实例 ID）
 
